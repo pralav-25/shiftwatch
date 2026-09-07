@@ -30,7 +30,7 @@ jobs:
           node-version: '22.18.0'
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - name: Build with the GitHub Pages repository base path
+      - name: Build with GitHub Pages asset URLs
         run: pnpm build
         env:
           GITHUB_PAGES: 'true'
