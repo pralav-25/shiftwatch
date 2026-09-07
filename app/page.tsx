@@ -2,6 +2,7 @@
 
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
+import planetArtwork from '@/assets/layered-sphere.png';
 import {
   Activity,
   ArrowDownToLine,
@@ -70,14 +71,14 @@ function Distribution({ feature }: { feature: Feature }) {
               x2="706"
               y1={216 - i * 48}
               y2={216 - i * 48}
-              stroke="#26313c"
+              stroke="var(--chart-grid)"
               strokeDasharray="3 5"
             />
             <text
               x="32"
               y={220 - i * 48}
               textAnchor="end"
-              fill="#92a2b3"
+              fill="var(--chart-label)"
               fontSize="12"
             >
               {Math.round(((max * i) / 4) * 100)}%
@@ -94,7 +95,7 @@ function Distribution({ feature }: { feature: Feature }) {
                 width={step * 0.37}
                 height={(bin.reference / max) * 192}
                 rx="2"
-                fill="#8191f5"
+                fill="var(--chart-reference)"
               >
                 <title>{`Reference: ${pct(bin.reference)}, ${num(bin.low, 2)} to ${num(bin.high, 2)}`}</title>
               </rect>
@@ -104,12 +105,17 @@ function Distribution({ feature }: { feature: Feature }) {
                 width={step * 0.37}
                 height={(bin.current / max) * 192}
                 rx="2"
-                fill="#cdfb75"
+                fill="var(--chart-current)"
               >
                 <title>{`Current: ${pct(bin.current)}, ${num(bin.low, 2)} to ${num(bin.high, 2)}`}</title>
               </rect>
               {i % 3 === 0 && (
-                <text x={50 + i * step} y="244" fill="#92a2b3" fontSize="12">
+                <text
+                  x={50 + i * step}
+                  y="244"
+                  fill="var(--chart-label)"
+                  fontSize="12"
+                >
                   {num(bin.low, 1)}
                 </text>
               )}
@@ -117,7 +123,7 @@ function Distribution({ feature }: { feature: Feature }) {
           );
         })}
         {bins.length === 0 && (
-          <text x="360" y="130" textAnchor="middle" fill="#92a2b3">
+          <text x="360" y="130" textAnchor="middle" fill="var(--chart-label)">
             Not enough observed data to plot
           </text>
         )}
@@ -359,7 +365,61 @@ export default function Home() {
           {report.dataset.name}
         </div>
         <section className="page-heading">
-          <div>
+          <div className="heading-art" aria-hidden="true">
+            {/* oxlint-disable-next-line nextjs/no-img-element -- Static decorative PNG; this export has no image-optimization server. */}
+            <img
+              src={
+                typeof planetArtwork === 'string'
+                  ? planetArtwork
+                  : planetArtwork.src
+              }
+              alt=""
+              width={1254}
+              height={1254}
+              className="heading-planet"
+              loading="eager"
+              decoding="async"
+            />
+          </div>
+          <div className="heading-orbits" aria-hidden="true">
+            <svg
+              viewBox="0 0 800 350"
+              fill="none"
+              preserveAspectRatio="xMidYMid slice"
+            >
+              <ellipse
+                cx="510"
+                cy="154"
+                rx="380"
+                ry="122"
+                transform="rotate(-17 510 154)"
+                stroke="#21808d"
+                strokeOpacity=".13"
+                strokeWidth=".7"
+              />
+              <ellipse
+                cx="518"
+                cy="154"
+                rx="322"
+                ry="168"
+                transform="rotate(20 518 154)"
+                stroke="#b19164"
+                strokeOpacity=".14"
+                strokeWidth=".7"
+              />
+              <ellipse
+                cx="530"
+                cy="160"
+                rx="460"
+                ry="190"
+                transform="rotate(-17 530 160)"
+                stroke="#7a8e82"
+                strokeOpacity=".09"
+                strokeWidth=".7"
+              />
+            </svg>
+          </div>
+          <div className="page-heading-copy">
             <div className="eyebrow">DATA DRIFT & MODEL EVALUATION</div>
             <h1>
               Model monitoring<span className="title-dot">.</span>
@@ -385,8 +445,11 @@ export default function Home() {
               <Upload size={16} />
               {importing ? 'Reading…' : 'Load report'}
             </button>
-            <button className="button secondary" onClick={download}>
-              <ArrowDownToLine size={16} /> Export report
+            <button className="button capsule" onClick={download}>
+              <span className="button-disc">
+                <ArrowDownToLine size={16} />
+              </span>{' '}
+              Export report
             </button>
           </div>
         </section>
