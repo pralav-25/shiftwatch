@@ -1,0 +1,11 @@
+Use case: stylized-concept
+Asset type: original decorative raster accent for a ShiftWatch machine-learning scientific dashboard header, viewed small at the far right against white or ivory.
+Primary request: a single sculptural planet-like sphere constructed from curved layered bands.
+Scene/backdrop: genuinely transparent background with alpha; no backdrop or opaque canvas.
+Subject: exactly one complete sphere, centered, with 10% clear margin on every side.
+Style/medium: refined editorial cosmic visual, tactile lithographic / airbrushed print quality, softly dimensional sculptural illustration.
+Color palette: deep teal and pale stone / ivory with a very restrained rusty ochre seam.
+Materials/textures: heavy fine stippled grain texture covering the curved layered bands, visibly tactile matte surface.
+Lighting/mood: soft dimensional illumination and a subtle contact shadow; quiet, sophisticated scientific editorial mood.
+Composition/framing: square 1024 by 1024 pixels. Complete sphere remains fully visible. Keep all painted content within 10% margins.
+Constraints: actual transparent background, preserve alpha; no space background, no stars, no planetary rings, no text, no labels, no logos, no watermark. Generate this one asset only; do not create a UI mockup.

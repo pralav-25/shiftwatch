@@ -6,7 +6,7 @@
 [![Python 3.12](https://img.shields.io/badge/Python-3.12-3776AB)](pyproject.toml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-cdfb75)](LICENSE)
 
-[**Open the interactive dashboard →**](https://pralav-25.github.io/shiftwatch/) · [Methodology](docs/methodology.md) · [Model card](docs/model-card.md) · [Interview guide](docs/interview-guide.md)
+[**Open the interactive dashboard →**](https://pralav-25.github.io/shiftwatch/) · [Methodology](docs/methodology.md) · [Design system](docs/design-system.md) · [Model card](docs/model-card.md) · [Interview guide](docs/interview-guide.md)
 
 ![Reproducible accuracy and drift results](docs/experiment-results.png)
 
