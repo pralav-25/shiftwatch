@@ -53,6 +53,9 @@ shiftwatch compare reference.csv current.csv \
   --psi-threshold 0.2 --alpha 0.05 --fail-on-alert --output report.json
 ```
 
+Report output is written atomically: a failed write preserves the previous report.
+The CLI refuses to overwrite either input CSV, including through a symlink or hard link.
+
 Load the resulting JSON into the dashboard. Comparisons without a trained model show drift diagnostics without fabricated model-performance metrics. The dashboard accepts up to 200 features, 20 scenarios, and 5 MB per report; the Python library can analyze wider tables.
 
 ```python
