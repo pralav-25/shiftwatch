@@ -5,6 +5,8 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+import os
+import tempfile
 from pathlib import Path
 
 import pandas as pd
@@ -19,6 +21,30 @@ def read_csv(path: Path) -> pd.DataFrame:
     if len(set(headers)) != len(headers):
         raise ValueError(f"Duplicate CSV headers in {path.name}")
     return pd.read_csv(path)
+
+
+def write_report(path: Path, report: dict) -> None:
+    """Replace a report only after its complete JSON has been written successfully."""
+    serialized = json.dumps(report, indent=2, allow_nan=False) + "\n"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary = None
+    try:
+        with tempfile.NamedTemporaryFile(
+            mode="w",
+            encoding="utf-8",
+            dir=path.parent,
+            prefix=f".{path.name}.",
+            suffix=".tmp",
+            delete=False,
+        ) as file:
+            temporary = Path(file.name)
+            file.write(serialized)
+            file.flush()
+            os.fsync(file.fileno())
+        temporary.replace(path)
+    finally:
+        if temporary is not None:
+            temporary.unlink(missing_ok=True)
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -43,6 +69,11 @@ def main(argv: list[str] | None = None) -> int:
         if args.command == "demo":
             report = run_experiment(args.seed)
         else:
+            for source in (args.reference, args.current):
+                if args.output.resolve() == source.resolve() or (
+                    args.output.exists() and source.exists() and args.output.samefile(source)
+                ):
+                    raise ValueError("Output must not overwrite an input CSV")
             result = compare_frames(
                 read_csv(args.reference),
                 read_csv(args.current),
@@ -72,8 +103,7 @@ def main(argv: list[str] | None = None) -> int:
                     }
                 ],
             }
-        args.output.parent.mkdir(parents=True, exist_ok=True)
-        args.output.write_text(json.dumps(report, indent=2, allow_nan=False) + "\n")
+        write_report(args.output, report)
     except (OSError, ValueError) as exc:
         parser.error(str(exc))
     print(f"Saved {args.output}")
