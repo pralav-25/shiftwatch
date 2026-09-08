@@ -6,6 +6,8 @@ small samples make p-values approximate. Missingness is monitored separately.
 
 from __future__ import annotations
 
+from numbers import Integral
+
 import numpy as np
 import pandas as pd
 from scipy.stats import ks_2samp, wasserstein_distance
@@ -37,7 +39,7 @@ def _edges(reference: np.ndarray, bins: int) -> np.ndarray:
 
 def population_stability_index(reference: np.ndarray, current: np.ndarray, bins: int = 10) -> float:
     """PSI with reference quantiles and Jeffreys (0.5-count) smoothing."""
-    if not 2 <= bins <= 50:
+    if isinstance(bins, bool) or not isinstance(bins, Integral) or not 2 <= bins <= 50:
         raise ValueError("bins must be between 2 and 50")
     ref, cur = np.asarray(reference, float), np.asarray(current, float)
     if ref.ndim != 1 or cur.ndim != 1 or not len(ref) or not len(cur):
@@ -76,8 +78,11 @@ def _validate(frame: pd.DataFrame, label: str) -> None:
         raise ValueError(f"{label} needs at least 5 rows and one numeric feature")
     if frame.columns.has_duplicates or not all(isinstance(c, str) for c in frame.columns):
         raise ValueError(f"{label} requires unique string column names")
-    if not all(pd.api.types.is_numeric_dtype(t) for t in frame.dtypes):
-        raise ValueError(f"{label} must contain only numeric features; remove IDs and labels")
+    if not all(
+        pd.api.types.is_numeric_dtype(t) and not pd.api.types.is_complex_dtype(t)
+        for t in frame.dtypes
+    ):
+        raise ValueError(f"{label} must contain only real numeric features; remove IDs and labels")
     if np.isinf(frame.to_numpy(dtype=float)).any():
         raise ValueError(f"{label} contains infinity; use missing values or correct the input")
 
@@ -99,7 +104,12 @@ def compare_frames(
     """
     if not 0 < alpha < 1 or not np.isfinite(psi_threshold) or psi_threshold <= 0:
         raise ValueError("alpha must be in (0, 1) and PSI threshold must be finite and positive")
-    if not 0 < missing_threshold <= 1 or not 2 <= bins <= 50:
+    if (
+        not 0 < missing_threshold <= 1
+        or isinstance(bins, bool)
+        or not isinstance(bins, Integral)
+        or not 2 <= bins <= 50
+    ):
         raise ValueError("missing threshold must be in (0, 1] and bins must be in [2, 50]")
     _validate(reference, "Reference")
     _validate(current, "Current")

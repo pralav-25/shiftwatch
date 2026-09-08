@@ -108,3 +108,16 @@ def test_psi_rejects_nonfinite_or_empty_arrays():
     for invalid in [[], [np.nan], [np.inf]]:
         with pytest.raises(ValueError):
             population_stability_index(np.arange(10), np.array(invalid))
+
+
+@pytest.mark.parametrize("bins", [2.5, True, False, float("nan"), "10"])
+def test_bins_must_be_integers(bins):
+    with pytest.raises(ValueError):
+        compare_frames(frame(range(20)), frame(range(20)), bins=bins)
+    with pytest.raises(ValueError):
+        population_stability_index(np.arange(20), np.arange(20), bins=bins)
+
+
+def test_complex_features_are_not_silently_cast_to_real():
+    with pytest.raises(ValueError, match="real numeric"):
+        compare_frames(frame([1 + 2j] * 20), frame([1 + 3j] * 20))

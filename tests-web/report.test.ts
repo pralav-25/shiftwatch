@@ -84,3 +84,16 @@ void test('filters without mutating original feature order', () => {
     before,
   );
 });
+
+void test('rejects contradictory alert evidence and fractional bins', () => {
+  for (const change of [
+    (r: Report) => { r.scenarios[0].drift.alert_count = 99; },
+    (r: Report) => { r.scenarios[0].drift.config.bins = 2.5; },
+    (r: Report) => { r.scenarios[0].drift.features[0].alert = true; },
+    (r: Report) => { r.scenarios[0].drift.features[0].quality_alert = true; },
+    (r: Report) => { r.scenarios[0].drift.features[0].insufficient_data = true; },
+  ]) {
+    const report = raw(); change(report);
+    assert.throws(() => parseReport(report), /Invalid ShiftWatch/);
+  }
+});
