@@ -186,6 +186,7 @@ export function parseReport(input: unknown): Report {
     number(c.psi_threshold, Number.EPSILON);
     number(c.missing_threshold, Number.EPSILON, 1);
     number(c.bins, 2, 50);
+    count(c.bins);
     const fs = array(d.features, 1, 200),
       names = new Set();
     if (fs.length !== d.feature_count || fs.length !== dataset.features) fail();
@@ -224,6 +225,13 @@ export function parseReport(input: unknown): Report {
         'alert',
       ])
         boolean(f[k]);
+      const quality = Math.abs(f.missing_delta as number) >= (c.missing_threshold as number);
+      const distribution = f.psi !== null && f.q_value !== null &&
+        (f.psi as number) >= (c.psi_threshold as number) &&
+        (f.q_value as number) <= (c.alpha as number);
+      if (f.quality_alert !== quality || f.distribution_alert !== distribution ||
+          f.alert !== (quality || distribution)) fail();
+      if (f.insufficient_data !== (Math.min(f.reference_observed as number, f.current_observed as number) < 5)) fail();
       const histogram = array(f.histogram, 0, 100);
       let previousHigh: number | undefined;
       for (const item of histogram) {
@@ -246,6 +254,7 @@ export function parseReport(input: unknown): Report {
         }
       }
     }
+    if (d.alert_count !== fs.filter((f) => obj(f).alert).length) fail();
     if (s.metrics !== null) {
       const m = obj(s.metrics);
       number(m.accuracy, 0, 1);
