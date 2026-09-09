@@ -23,6 +23,13 @@ jobs:
         run: |
           shiftwatch demo --output /tmp/reproduced.json
           python scripts/check_reproduction.py public/reports/demo.json /tmp/reproduced.json
+      - name: Execute analysis notebook
+        run: |
+          pip install -r requirements-notebook.lock
+          python -m nbconvert --to notebook --execute \
+            --ExecutePreprocessor.timeout=180 \
+            --output wine-monitoring-analysis --output-dir /tmp \
+            notebooks/wine-monitoring-analysis.ipynb
   dashboard:
     runs-on: ubuntu-latest
     steps:

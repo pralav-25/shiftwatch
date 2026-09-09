@@ -6,7 +6,7 @@
 [![Python 3.12](https://img.shields.io/badge/Python-3.12-3776AB)](pyproject.toml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-cdfb75)](LICENSE)
 
-[**Open the interactive dashboard →**](https://pralav-25.github.io/shiftwatch/) · [Methodology](docs/methodology.md) · [Design system](docs/design-system.md) · [Model card](docs/model-card.md) · [Interview guide](docs/interview-guide.md)
+[**Open the interactive dashboard →**](https://pralav-25.github.io/shiftwatch/) · [Executed analysis notebook](notebooks/wine-monitoring-analysis.ipynb) · [Methodology](docs/methodology.md) · [Model card](docs/model-card.md) · [Interview guide](docs/interview-guide.md)
 
 ![Reproducible accuracy and drift results](docs/experiment-results.png)
 
@@ -40,6 +40,27 @@ shiftwatch demo
 ```
 
 This writes `public/reports/demo.json`. Open the [dashboard](https://pralav-25.github.io/shiftwatch/) and select **Load report** to inspect it. For a lightweight library installation without plotting and test tools, use `pip install -e .` instead of the locked environment.
+
+### Analysis notebook
+
+The [executed notebook](notebooks/wine-monitoring-analysis.ipynb) walks through
+training-only exploration, baseline and cross-validation results, holdout error
+analysis, and synthetic drift scenarios. Its tables and figures are computed from
+the same `run_experiment` function used by the dashboard. Read it directly on GitHub,
+or rerun every cell from the repository root in the Python 3.12 environment above:
+
+```bash
+pip install -r requirements-notebook.lock
+python -m nbconvert --to notebook --execute \
+  --ExecutePreprocessor.timeout=180 \
+  --output wine-monitoring-analysis --output-dir /tmp \
+  notebooks/wine-monitoring-analysis.ipynb
+```
+
+This saves a fresh executed copy under `/tmp` and preserves the committed notebook.
+On Windows, replace `/tmp` with an existing temporary directory. Notebook tooling
+has a separate dependency lock that includes the experiment's numerical lock.
+GitHub Actions executes the notebook to catch stale imports and analysis errors.
 
 ### Compare your own data
 
@@ -156,6 +177,7 @@ tests/               Numerical, leakage, reproducibility, and CLI tests
 tests-web/           Report-validation and dashboard-logic tests
 examples/            Reference data and a documented synthetic shift
 public/reports/      Reproducible experiment output
+notebooks/           Executed training exploration and model/drift analysis
 docs/                Methodology, model card, and interview preparation
 scripts/             Reproduction checks and results figure
 .github/workflows/   CI and static dashboard publishing
