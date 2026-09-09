@@ -70,6 +70,18 @@ result = compare_frames(
 print(result["alert_count"])
 ```
 
+### Exit status in automation
+
+A successful comparison returns **0** unless `--fail-on-alert` is enabled and
+the report contains an alert. With that flag, an alert returns **2** after the
+report has been written, so downstream tooling can still inspect the result.
+Without the flag, an alert does not make the command fail.
+
+Argument and input-validation errors also use exit status **2**. Do not treat
+that status alone as proof of drift: check the command's error output and whether
+the current run successfully wrote a report. Use a separate output path for each
+run to avoid mistaking a preserved report from an earlier run for a fresh result.
+
 ## Results you can reproduce
 
 Seed **42**; 124 training rows; 54 held-out test rows. Training CV selects **logistic regression**, with mean macro F1 of **0.9834** across five folds. These scores describe a small, relatively easy dataset; they are not evidence of general-purpose model quality.
