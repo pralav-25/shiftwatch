@@ -1,9 +1,10 @@
+import csv
 import json
 
 import pandas as pd
 import pytest
 
-from shiftwatch.cli import main
+from shiftwatch.cli import main, read_csv
 
 
 def test_compare_writes_portable_report_and_returns_ci_failure(tmp_path):
@@ -18,12 +19,30 @@ def test_compare_writes_portable_report_and_returns_ci_failure(tmp_path):
     assert report["scenarios"][0]["drift"]["alert_count"] == 1
 
 
-def test_duplicate_csv_headers_rejected(tmp_path):
+@pytest.mark.parametrize("prefix", ["", "\n", "\r\n \t\r\n", "\ufeff\n"])
+def test_duplicate_csv_headers_rejected(tmp_path, capsys, prefix):
     path = tmp_path / "bad.csv"
-    path.write_text("x,x\n" + "1,2\n" * 10)
+    path.write_text(prefix + "x,x\n" + "1,2\n" * 10, encoding="utf-8")
+    output = tmp_path / "report.json"
+    output.write_text("previous report")
     with pytest.raises(SystemExit) as exc:
-        main(["compare", str(path), str(path)])
+        main(["compare", str(path), str(path), "--output", str(output)])
     assert exc.value.code == 2
+    assert "Duplicate CSV headers in bad.csv" in capsys.readouterr().err
+    assert output.read_text() == "previous report"
+
+
+@pytest.mark.parametrize(
+    "headers",
+    [["x", "x.1"], ["NA", "NaN"], ["01", "1"], ["sensor,value", "x"], ["   "]],
+)
+def test_header_validation_preserves_distinct_literal_names(tmp_path, headers):
+    path = tmp_path / "valid.csv"
+    expected = pd.DataFrame({name: range(10) for name in headers})
+    path.write_text(
+        "\ufeff\n \t\n" + expected.to_csv(index=False, quoting=csv.QUOTE_ALL), encoding="utf-8"
+    )
+    pd.testing.assert_frame_equal(read_csv(path), expected)
 
 
 def test_output_cannot_overwrite_input_csv(tmp_path):

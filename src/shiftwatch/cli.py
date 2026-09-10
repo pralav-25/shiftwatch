@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import argparse
-import csv
 import json
 import os
 import tempfile
@@ -16,8 +15,9 @@ from .experiment import run_experiment
 
 
 def read_csv(path: Path) -> pd.DataFrame:
-    with path.open(newline="", encoding="utf-8-sig") as file:
-        headers = next(csv.reader(file), [])
+    # Read the header as literal data before pandas can rename duplicates.
+    # Using the same parser honors blank lines, quoting, and UTF-8 BOMs.
+    headers = pd.read_csv(path, header=None, nrows=1, dtype=str, na_filter=False).iloc[0].tolist()
     if len(set(headers)) != len(headers):
         raise ValueError(f"Duplicate CSV headers in {path.name}")
     return pd.read_csv(path)
