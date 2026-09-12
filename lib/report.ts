@@ -94,6 +94,30 @@ export function isAlert(
     missingnessAlert(f.missing_delta, missingThreshold)
   );
 }
+export function withPsiThreshold(report: Report, threshold: number): Report {
+  return {
+    ...report,
+    scenarios: report.scenarios.map((s) => {
+      const features = s.drift.features.map((f) => ({
+        ...f,
+        distribution_alert: f.psi !== null && f.q_value !== null &&
+          f.psi >= threshold && f.q_value <= s.drift.config.alpha,
+        quality_alert: missingnessAlert(f.missing_delta, s.drift.config.missing_threshold),
+        alert: isAlert(f, threshold, s.drift.config.alpha, s.drift.config.missing_threshold),
+      }));
+      return {
+        ...s,
+        drift: {
+          ...s.drift,
+          config: { ...s.drift.config, psi_threshold: threshold },
+          features,
+          alert_count: features.filter((f) => f.alert).length,
+        },
+      };
+    }),
+  };
+}
+
 export function sortFeatures(
   features: Feature[],
   query: string,

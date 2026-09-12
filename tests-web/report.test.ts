@@ -5,6 +5,7 @@ import {
   parseReport,
   isAlert,
   sortFeatures,
+  withPsiThreshold,
   type Report,
 } from '../lib/report.ts';
 const raw = (): Report =>
@@ -95,5 +96,14 @@ void test('rejects contradictory alert evidence and fractional bins', () => {
   ]) {
     const report = raw(); change(report);
     assert.throws(() => parseReport(report), /Invalid ShiftWatch/);
+  }
+});
+
+void test('export recomputes distribution flags and counts when PSI changes', () => {
+  const report = parseReport(raw());
+  const exported = parseReport(withPsiThreshold(report, 1000));
+  for (const scenario of exported.scenarios) {
+    assert.equal(scenario.drift.alert_count, scenario.drift.features.filter((f) => f.quality_alert).length);
+    assert.ok(scenario.drift.features.every((f) => !f.distribution_alert));
   }
 });

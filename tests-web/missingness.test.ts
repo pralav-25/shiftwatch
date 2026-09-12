@@ -5,6 +5,7 @@ import {
   isAlert,
   parseReport,
   sortFeatures,
+  withPsiThreshold,
   type Feature,
   type Report,
 } from '../lib/report.ts';
@@ -94,6 +95,14 @@ for (const c of cases) {
       parseReport(report).scenarios[0].drift.alert_count,
       Number(c.alert),
     );
+    const before = structuredClone(report);
+    const exported = parseReport(JSON.parse(JSON.stringify(withPsiThreshold(report, 0.3))));
+    const exportedDrift = exported.scenarios[0].drift;
+    assert.equal(exportedDrift.config.psi_threshold, 0.3);
+    assert.equal(exportedDrift.alert_count, Number(c.alert));
+    assert.equal(exportedDrift.features[0].quality_alert, c.alert);
+    assert.equal(exportedDrift.features[0].alert, c.alert);
+    assert.deepEqual(report, before);
     feature.quality_alert = feature.alert = !c.alert;
     report.scenarios[0].drift.alert_count = Number(!c.alert);
     assert.throws(() => parseReport(report), /Invalid ShiftWatch/);
