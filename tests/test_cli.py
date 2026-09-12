@@ -19,6 +19,21 @@ def test_compare_writes_portable_report_and_returns_ci_failure(tmp_path):
     assert report["scenarios"][0]["drift"]["alert_count"] == 1
 
 
+@pytest.mark.parametrize("missing_counts", [(5, 6), (6, 5)])
+def test_fail_on_alert_includes_exact_missingness_boundary(tmp_path, missing_counts):
+    ref, cur, out = [tmp_path / p for p in ["ref.csv", "current.csv", "report.json"]]
+    for path, missing in zip([ref, cur], missing_counts, strict=True):
+        pd.DataFrame({"value": [float("nan")] * missing + [1.0] * (20 - missing)}).to_csv(
+            path, index=False
+        )
+    result = main(["compare", str(ref), str(cur), "--output", str(out), "--fail-on-alert"])
+    assert result == 2
+    drift = json.loads(out.read_text())["scenarios"][0]["drift"]
+    assert drift["alert_count"] == 1
+    assert drift["features"][0]["quality_alert"]
+    assert not drift["features"][0]["distribution_alert"]
+
+
 @pytest.mark.parametrize("prefix", ["", "\n", "\r\n \t\r\n", "\ufeff\n"])
 def test_duplicate_csv_headers_rejected(tmp_path, capsys, prefix):
     path = tmp_path / "bad.csv"

@@ -73,6 +73,13 @@ export type Report = {
   }[];
   scenarios: Scenario[];
 };
+function missingnessAlert(delta: number, threshold: number): boolean {
+  // Match drift.py's relative-only isclose tolerance at inclusive boundaries.
+  // No absolute tolerance: unchanged data must not alert at tiny thresholds.
+  const magnitude = Math.abs(delta);
+  return magnitude >= threshold ||
+    Math.abs(magnitude - threshold) <= 1e-12 * Math.max(magnitude, threshold);
+}
 export function isAlert(
   f: Feature,
   threshold: number,
@@ -84,7 +91,7 @@ export function isAlert(
       f.q_value !== null &&
       f.psi >= threshold &&
       f.q_value <= alpha) ||
-    Math.abs(f.missing_delta) >= missingThreshold
+    missingnessAlert(f.missing_delta, missingThreshold)
   );
 }
 export function sortFeatures(
@@ -225,7 +232,7 @@ export function parseReport(input: unknown): Report {
         'alert',
       ])
         boolean(f[k]);
-      const quality = Math.abs(f.missing_delta as number) >= (c.missing_threshold as number);
+      const quality = missingnessAlert(f.missing_delta as number, c.missing_threshold as number);
       const distribution = f.psi !== null && f.q_value !== null &&
         (f.psi as number) >= (c.psi_threshold as number) &&
         (f.q_value as number) <= (c.alpha as number);

@@ -44,6 +44,8 @@ The report also includes Wasserstein distance in original feature units and norm
 
 Missing-rate changes are measured in absolute percentage points. A change of at least 0.05 triggers a separate quality alert, even if too few observations remain for distribution testing. Both increased and decreased missingness count because either can indicate a pipeline change.
 
+Python and the dashboard use a relative tolerance of `1e-12` (no absolute tolerance) for this inclusive comparison. This prevents floating-point subtraction, such as `0.30 - 0.25`, from hiding an exact threshold alert. An unchanged missing rate never triggers an alert at a positive threshold. Regenerate older comparison reports if they recorded a missed boundary alert, so their saved flags agree with the corrected validator.
+
 ## Model evaluation
 
 Accuracy, macro F1, multiclass log loss, and the confusion matrix describe each test scenario. Accuracy intervals are 2.5th/97.5th percentile intervals from 2,000 seeded bootstrap resamples of the correctness vector. They capture test-sample variation conditional on this fitted model. They exclude variation from retraining, model selection, and dataset sampling before the train/test split. Percentile intervals may be overly optimistic near perfect accuracy or on very small samples.

@@ -1,3 +1,6 @@
+import json
+from pathlib import Path
+
 import numpy as np
 import pandas as pd
 import pytest
@@ -52,6 +55,26 @@ def test_missingness_not_hidden_by_dropping_nulls():
     assert feature["quality_alert"]
     assert feature["missing_delta"] == 0.3
     assert feature["current_observed"] == 14
+
+
+@pytest.mark.parametrize(
+    "case",
+    json.loads((Path(__file__).parent / "fixtures/missingness-thresholds.json").read_text()),
+    ids=lambda case: case["name"],
+)
+def test_missingness_threshold_boundaries(case):
+    def values(prefix):
+        missing = case[f"{prefix}_missing"]
+        return frame([np.nan] * missing + [1.0] * (case[f"{prefix}_rows"] - missing))
+
+    report = compare_frames(
+        values("reference"), values("current"), missing_threshold=case["threshold"]
+    )
+    feature = report["features"][0]
+    assert not feature["distribution_alert"]
+    assert feature["quality_alert"] is case["alert"]
+    assert feature["alert"] is case["alert"]
+    assert report["alert_count"] == int(case["alert"])
 
 
 def test_all_missing_has_explicit_insufficient_data():

@@ -6,6 +6,7 @@ small samples make p-values approximate. Missingness is monitored separately.
 
 from __future__ import annotations
 
+from math import isclose
 from numbers import Integral
 
 import numpy as np
@@ -87,6 +88,13 @@ def _validate(frame: pd.DataFrame, label: str) -> None:
         raise ValueError(f"{label} contains infinity; use missing values or correct the input")
 
 
+def _missingness_alert(delta: float, threshold: float) -> bool:
+    # Match lib/report.ts: subtraction can put an exact boundary just below it.
+    # Relative-only tolerance keeps zero change below every positive threshold.
+    magnitude = abs(delta)
+    return magnitude >= threshold or isclose(magnitude, threshold, rel_tol=1e-12, abs_tol=0)
+
+
 def compare_frames(
     reference: pd.DataFrame,
     current: pd.DataFrame,
@@ -142,7 +150,7 @@ def compare_frames(
                 "missing_delta": cur_missing - ref_missing,
                 "reference_observed": len(ref),
                 "current_observed": len(cur),
-                "quality_alert": abs(cur_missing - ref_missing) >= missing_threshold,
+                "quality_alert": _missingness_alert(cur_missing - ref_missing, missing_threshold),
                 "insufficient_data": not enough,
                 "distribution_alert": False,
                 "histogram": _histogram(ref, cur),

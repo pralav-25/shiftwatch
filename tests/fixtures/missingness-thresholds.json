@@ -1,0 +1,74 @@
+[
+  {
+    "name": "exact increase",
+    "reference_rows": 20,
+    "reference_missing": 5,
+    "current_rows": 20,
+    "current_missing": 6,
+    "threshold": 0.05,
+    "alert": true
+  },
+  {
+    "name": "exact decrease",
+    "reference_rows": 20,
+    "reference_missing": 6,
+    "current_rows": 20,
+    "current_missing": 5,
+    "threshold": 0.05,
+    "alert": true
+  },
+  {
+    "name": "just below threshold",
+    "reference_rows": 20,
+    "reference_missing": 5,
+    "current_rows": 20,
+    "current_missing": 6,
+    "threshold": 0.0500000001,
+    "alert": false
+  },
+  {
+    "name": "just above threshold",
+    "reference_rows": 20,
+    "reference_missing": 5,
+    "current_rows": 20,
+    "current_missing": 6,
+    "threshold": 0.0499999999,
+    "alert": true
+  },
+  {
+    "name": "custom threshold",
+    "reference_rows": 20,
+    "reference_missing": 2,
+    "current_rows": 20,
+    "current_missing": 6,
+    "threshold": 0.2,
+    "alert": true
+  },
+  {
+    "name": "unchanged with tiny threshold",
+    "reference_rows": 20,
+    "reference_missing": 5,
+    "current_rows": 20,
+    "current_missing": 5,
+    "threshold": 1e-15,
+    "alert": false
+  },
+  {
+    "name": "unequal row counts increase",
+    "reference_rows": 20,
+    "reference_missing": 5,
+    "current_rows": 10,
+    "current_missing": 3,
+    "threshold": 0.05,
+    "alert": true
+  },
+  {
+    "name": "unequal row counts decrease",
+    "reference_rows": 10,
+    "reference_missing": 3,
+    "current_rows": 20,
+    "current_missing": 5,
+    "threshold": 0.05,
+    "alert": true
+  }
+]
