@@ -60,6 +60,37 @@ def test_header_validation_preserves_distinct_literal_names(tmp_path, headers):
     pd.testing.assert_frame_equal(read_csv(path), expected)
 
 
+@pytest.mark.parametrize("prefix", ["", "\ufeff\n \t\n"])
+@pytest.mark.parametrize(
+    "rows",
+    [
+        "1,10,20\n" * 5,
+        "1,10,20,30\n" * 5,
+        "1,10\n" + "2,20,30\n" * 4,
+    ],
+    ids=["implicit-index", "implicit-multi-index", "later-extra-field"],
+)
+def test_extra_csv_fields_rejected_without_replacing_report(tmp_path, capsys, prefix, rows):
+    source = tmp_path / "wide.csv"
+    source.write_text(prefix + "x,y\n" + rows, encoding="utf-8")
+    output = tmp_path / "report.json"
+    output.write_text("previous report")
+    with pytest.raises(SystemExit) as exc:
+        main(["compare", str(source), str(source), "--output", str(output)])
+    assert exc.value.code == 2
+    assert "CSV" in capsys.readouterr().err
+    assert output.read_text() == "previous report"
+
+
+def test_csv_explicit_missing_values_are_preserved(tmp_path):
+    source = tmp_path / "missing.csv"
+    source.write_text('"x,value",y\n1,10\n2,\n3,30\n4,40\n5,50\n')
+    data = read_csv(source)
+    assert data.columns.tolist() == ["x,value", "y"]
+    assert data["x,value"].tolist() == [1, 2, 3, 4, 5]
+    assert data["y"].isna().tolist() == [False, True, False, False, False]
+
+
 def test_output_cannot_overwrite_input_csv(tmp_path):
     source = tmp_path / "input.csv"
     content = "value\n1\n2\n3\n4\n5\n"

@@ -6,6 +6,7 @@ import argparse
 import json
 import os
 import tempfile
+import warnings
 from pathlib import Path
 
 import pandas as pd
@@ -20,7 +21,20 @@ def read_csv(path: Path) -> pd.DataFrame:
     headers = pd.read_csv(path, header=None, nrows=1, dtype=str, na_filter=False).iloc[0].tolist()
     if len(set(headers)) != len(headers):
         raise ValueError(f"Duplicate CSV headers in {path.name}")
-    return pd.read_csv(path)
+    # A wider data row otherwise makes pandas infer an index, silently moving
+    # leading values out of the monitored features. Disabling index inference
+    # alone still truncates those rows, so treat its data-loss warning as an error.
+    try:
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", pd.errors.ParserWarning)
+            return pd.read_csv(path, index_col=False)
+    except pd.errors.ParserWarning as exc:
+        raise ValueError(
+            f"Invalid CSV in {path.name}: data rows have more fields than the header. "
+            "Give every column a header and check for extra delimiters."
+        ) from exc
+    except pd.errors.ParserError as exc:
+        raise ValueError(f"Invalid CSV in {path.name}: {exc}") from exc
 
 
 def write_report(path: Path, report: dict) -> None:

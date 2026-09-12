@@ -66,6 +66,8 @@ GitHub Actions executes the notebook to catch stale imports and analysis errors.
 
 Use two CSVs containing the same named numerical feature columns. Column order can differ. Remove identifiers and target labels. Each file needs at least five rows; missing numeric values are allowed, infinity and nonnumeric columns are rejected.
 
+Give every column a unique header. Rows with extra values are rejected instead of silently treating leading values as an index or dropping columns. Check for extra delimiters if this happens; a rejected comparison leaves any existing output report intact.
+
 ```bash
 shiftwatch compare examples/reference.csv examples/shifted.csv --output report.json
 
