@@ -30,7 +30,7 @@ Each bin receives 0.5 pseudo-counts before normalization (Jeffreys-style smoothi
 
 `PSI = Σ (q_i − p_i) × log(q_i / p_i)`
 
-The result depends on binning and smoothing, especially with small samples. The default 0.20 threshold is a configurable effect-size heuristic. It is not a p-value. Charts deliberately use shared equal-width bins for readability; they are not the bins used to compute PSI.
+The result depends on binning and smoothing, especially with small samples. The default 0.20 threshold is a configurable effect-size heuristic. It is not a p-value. Charts start with up to 12 shared equal-width bins for readability; they are not the bins used to compute PSI. Boundaries that round to the same floating-point value are merged, and constant ranges are padded by at least one representable step. This keeps chart bins positive in width for large constants and very narrow ranges without changing the drift statistics.
 
 ### KS and multiple comparisons
 

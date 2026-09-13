@@ -60,8 +60,13 @@ def _histogram(ref: np.ndarray, cur: np.ndarray) -> list[dict]:
     # Display-only, equal-width shared bins. These are intentionally distinct from PSI bins.
     low, high = min(ref.min(), cur.min()), max(ref.max(), cur.max())
     if low == high:
-        low, high = low - 0.5, high + 0.5
-    edges = np.linspace(low, high, 13)
+        # Half a unit can round back to the same large value. Expand by at
+        # least one representable step so the display range stays nonempty.
+        padding = max(0.5, abs(float(np.spacing(low))))
+        low, high = low - padding, high + padding
+    # Narrow ranges can round multiple boundaries to the same float. Merge
+    # those bins so exported reports satisfy the dashboard's positive widths.
+    edges = np.unique(np.linspace(low, high, 13))
     a, b = np.histogram(ref, edges)[0] / len(ref), np.histogram(cur, edges)[0] / len(cur)
     return [
         {

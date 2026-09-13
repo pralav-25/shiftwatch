@@ -1,4 +1,5 @@
 import json
+from itertools import pairwise
 from pathlib import Path
 
 import numpy as np
@@ -37,6 +38,29 @@ def test_constant_reference_detects_shift_in_either_direction(direction):
     feature = compare_frames(frame(np.ones(40)), frame(np.ones(40) + direction))["features"][0]
     assert feature["distribution_alert"]
     assert feature["normalized_wasserstein"] is None
+
+
+@pytest.mark.parametrize("value", [-1e16, -1e15, 1e15, 1e16])
+def test_large_constant_values_produce_valid_histogram_bins(value):
+    data = frame([value] * 10)
+    feature = compare_frames(data, data)["features"][0]
+    assert feature["psi"] == 0
+    assert not feature["alert"]
+    histogram = feature["histogram"]
+    assert 1 <= len(histogram) <= 12
+    assert all(np.isfinite(b["low"]) and b["low"] < b["high"] for b in histogram)
+    assert np.isfinite(histogram[-1]["high"])
+    assert all(a["high"] == b["low"] for a, b in pairwise(histogram))
+    assert sum(b["reference"] for b in histogram) == pytest.approx(1)
+    assert sum(b["current"] for b in histogram) == pytest.approx(1)
+
+
+@pytest.mark.parametrize("value", [-1.0, 1.0])
+def test_adjacent_floats_keep_both_distributions_in_positive_width_bins(value):
+    adjacent = np.nextafter(value, np.inf)
+    feature = compare_frames(frame([value] * 10), frame([adjacent] * 10))["features"][0]
+    histogram = feature["histogram"]
+    assert histogram == [{"low": value, "high": adjacent, "reference": 1.0, "current": 1.0}]
 
 
 def test_bh_correction_known_values_and_order():
