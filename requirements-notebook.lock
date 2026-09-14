@@ -34,7 +34,7 @@ platformdirs==4.11.8
 prompt_toolkit==3.0.53
 psutil==7.2.2
 ptyprocess==0.7.0
-pure_eval==0.2.3
+pure_eval==0.2.4
 pyzmq==27.2.0
 referencing==0.37.0
 rpds-py==2026.6.3
