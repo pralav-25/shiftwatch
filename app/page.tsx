@@ -33,6 +33,7 @@ import {
   TableCell,
 } from '@/components/ui/table';
 import { Checkbox } from '@/components/ui/checkbox';
+import { ScenarioComparison } from '@/components/scenario-comparison';
 import source from '@/public/reports/demo.json';
 import {
   type Report,
@@ -136,6 +137,7 @@ function Distribution({ feature }: { feature: Feature }) {
 
 export default function Home() {
   const [report, setReport] = useState<Report>(demo);
+  const [reportRevision, setReportRevision] = useState(0);
   const [importError, setImportError] = useState('');
   const [importing, setImporting] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -268,6 +270,7 @@ export default function Home() {
         throw new Error('Choose a report smaller than 5 MB.');
       const next = parseReport(JSON.parse(await file.text()));
       setReport(next);
+      setReportRevision((revision) => revision + 1);
       setScenarioId(next.scenarios[0].id);
       setThreshold(next.scenarios[0].drift.config.psi_threshold);
       setSelected(next.scenarios[0].drift.features[0].name);
@@ -288,6 +291,7 @@ export default function Home() {
   }
   function restoreDemo() {
     setReport(demo);
+    setReportRevision((revision) => revision + 1);
     setScenarioId('severe');
     setThreshold(0.2);
     setSelected('flavanoids');
@@ -562,6 +566,7 @@ export default function Home() {
           <TabsList variant="line" className="tab-list">
             <TabsTrigger value="drift">Data drift</TabsTrigger>
             <TabsTrigger value="evaluation">Model evaluation</TabsTrigger>
+            <TabsTrigger value="comparison">Compare scenarios</TabsTrigger>
             <TabsTrigger value="method">Methodology</TabsTrigger>
           </TabsList>
           <TabsContent value="drift">
@@ -820,6 +825,14 @@ export default function Home() {
                 </>
               )}
             </section>
+          </TabsContent>
+          <TabsContent value="comparison">
+            <ScenarioComparison
+              key={reportRevision}
+              scenarios={report.scenarios}
+              current={scenario}
+              threshold={threshold}
+            />
           </TabsContent>
           <TabsContent value="method">
             <section className="panel prose">
