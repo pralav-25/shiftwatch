@@ -8,7 +8,7 @@ attrs==26.1.0
 beautifulsoup4==4.15.0
 bleach==6.4.0
 comm==0.2.3
-debugpy==1.8.21
+debugpy==1.8.22
 defusedxml==0.7.1
 executing==2.2.1
 fastjsonschema==2.22.2
@@ -34,14 +34,14 @@ platformdirs==4.11.8
 prompt_toolkit==3.0.53
 psutil==7.2.2
 ptyprocess==0.7.0
-pure_eval==0.2.3
+pure_eval==0.2.4
 pyzmq==27.2.0
 referencing==0.37.0
 rpds-py==2026.6.3
 soupsieve==2.9.2
 stack-data==0.6.3
 tinycss2==1.5.1
-tornado==6.5.8
+tornado==6.5.10
 traitlets==5.16.1
 typing_extensions==4.16.0
 wcwidth==0.8.3
