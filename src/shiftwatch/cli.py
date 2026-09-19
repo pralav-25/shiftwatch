@@ -76,6 +76,12 @@ def main(argv: list[str] | None = None) -> int:
     compare.add_argument("--alpha", type=float, default=0.05)
     compare.add_argument("--psi-threshold", type=float, default=0.2)
     compare.add_argument(
+        "--missing-threshold",
+        type=float,
+        default=0.05,
+        help="Alert on absolute missing-rate change (0 < value <= 1; default: 0.05)",
+    )
+    compare.add_argument(
         "--fail-on-alert", action="store_true", help="Exit 2 when drift is flagged"
     )
     args = parser.parse_args(argv)
@@ -93,6 +99,7 @@ def main(argv: list[str] | None = None) -> int:
                 read_csv(args.current),
                 alpha=args.alpha,
                 psi_threshold=args.psi_threshold,
+                missing_threshold=args.missing_threshold,
             )
             report = {
                 "schema_version": "shiftwatch/v1",

@@ -29,9 +29,63 @@ def test_fail_on_alert_includes_exact_missingness_boundary(tmp_path, missing_cou
     result = main(["compare", str(ref), str(cur), "--output", str(out), "--fail-on-alert"])
     assert result == 2
     drift = json.loads(out.read_text())["scenarios"][0]["drift"]
+    assert drift["config"]["missing_threshold"] == 0.05
     assert drift["alert_count"] == 1
     assert drift["features"][0]["quality_alert"]
     assert not drift["features"][0]["distribution_alert"]
+
+
+@pytest.mark.parametrize("missing_counts", [(0, 4), (4, 0)])
+@pytest.mark.parametrize("threshold, expected_exit", [(0.2, 2), (0.3, 0)])
+def test_custom_missing_threshold_controls_report_and_exit_status(
+    tmp_path, missing_counts, threshold, expected_exit
+):
+    ref, cur, out = [tmp_path / p for p in ["ref.csv", "current.csv", "report.json"]]
+    for path, missing in zip([ref, cur], missing_counts, strict=True):
+        pd.DataFrame({"value": [float("nan")] * missing + [1.0] * (20 - missing)}).to_csv(
+            path, index=False
+        )
+    result = main(
+        [
+            "compare",
+            str(ref),
+            str(cur),
+            "--output",
+            str(out),
+            "--missing-threshold",
+            str(threshold),
+            "--fail-on-alert",
+        ]
+    )
+    assert result == expected_exit
+    drift = json.loads(out.read_text())["scenarios"][0]["drift"]
+    alert = expected_exit == 2
+    assert drift["config"]["missing_threshold"] == threshold
+    assert drift["alert_count"] == int(alert)
+    assert drift["features"][0]["quality_alert"] is alert
+    assert drift["features"][0]["alert"] is alert
+    assert not drift["features"][0]["distribution_alert"]
+
+
+@pytest.mark.parametrize("threshold", ["0", "-0.1", "1.1", "nan", "inf", "-inf"])
+def test_invalid_missing_threshold_preserves_previous_report(tmp_path, capsys, threshold):
+    source, output = tmp_path / "input.csv", tmp_path / "report.json"
+    source.write_text("value\n1\n2\n3\n4\n5\n")
+    output.write_text("previous report")
+    with pytest.raises(SystemExit) as exc:
+        main(
+            [
+                "compare",
+                str(source),
+                str(source),
+                "--output",
+                str(output),
+                f"--missing-threshold={threshold}",
+            ]
+        )
+    assert exc.value.code == 2
+    assert "missing threshold must be in (0, 1]" in capsys.readouterr().err
+    assert output.read_text() == "previous report"
 
 
 @pytest.mark.parametrize("prefix", ["", "\n", "\r\n \t\r\n", "\ufeff\n"])
