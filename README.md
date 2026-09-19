@@ -74,7 +74,16 @@ shiftwatch compare examples/reference.csv examples/shifted.csv --output report.j
 # A data-quality gate: exit 2 if any feature alerts; the report is still saved.
 shiftwatch compare reference.csv current.csv \
   --psi-threshold 0.2 --alpha 0.05 --fail-on-alert --output report.json
+
+# Alert on missing-rate changes of at least 10 percentage points.
+shiftwatch compare reference.csv current.csv \
+  --missing-threshold 0.10 --fail-on-alert --output report.json
 ```
+
+`--missing-threshold` sets the absolute missing-rate change that triggers a quality
+alert in either direction. Use a proportion greater than 0 and at most 1; the
+default is `0.05` (5 percentage points). The report records the chosen threshold
+so the dashboard uses the same rule.
 
 Report output is written atomically: a failed write preserves the previous report.
 The CLI refuses to overwrite either input CSV, including through a symlink or hard link.
