@@ -64,7 +64,7 @@ GitHub Actions executes the notebook to catch stale imports and analysis errors.
 
 ### Compare your own data
 
-Use two CSVs containing the same named numerical feature columns. Column order can differ. Remove identifiers and target labels. Each file needs at least five rows; missing numeric values are allowed, infinity and nonnumeric columns are rejected.
+Use two CSVs containing the same named numerical feature columns. Column order can differ. Remove identifiers and target labels, or select only monitored features with repeated `--column NAME` options. Each file needs at least five rows; missing numeric values are allowed, infinity and nonnumeric columns are rejected.
 
 Give every column a unique header. Rows with extra values are rejected instead of silently treating leading values as an index or dropping columns. Check for extra delimiters if this happens; a rejected comparison leaves any existing output report intact.
 
@@ -196,3 +196,15 @@ The monitor is univariate and numerical. It can miss changes in feature relation
 Project code: [MIT](LICENSE). The bundled demo derives from **Wine**, by Stefan Aeberhard and M. Forina, UCI Machine Learning Repository, [DOI: 10.24432/C5PC7J](https://doi.org/10.24432/C5PC7J), licensed under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). The experiment uses scikit-learn's copy, converts the class labels to zero-based indices, partitions the rows, and creates explicitly labeled synthetic perturbations. These transformations are not endorsed by the dataset authors.
 
 Primary references: [UCI dataset](https://archive.ics.uci.edu/dataset/109/wine), [scikit-learn leakage guidance](https://scikit-learn.org/stable/common_pitfalls.html), [SciPy KS documentation](https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.ks_2samp.html).
+
+### Select monitored CSV columns
+
+```bash
+shiftwatch compare reference.csv current.csv --column temperature --column pressure --output sensors.json
+```
+
+Only the named columns are compared, in the order requested. This lets CSVs retain
+text identifiers and target labels without monitoring them. Selected names must
+exist in both inputs and must not be repeated. Without `--column`, the existing
+whole-table validation applies. Header and row-width checks still inspect each
+complete CSV, and a rejected selection preserves an existing output report.
