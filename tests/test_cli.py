@@ -149,3 +149,46 @@ def test_output_alias_cannot_overwrite_input(tmp_path, alias_type):
     with pytest.raises(SystemExit):
         main(["compare", str(source), str(source), "--output", str(alias)])
     assert source.read_text() == content
+
+
+def test_column_selection_ignores_identifiers_and_preserves_requested_order(tmp_path):
+    ref, cur, out = [tmp_path / p for p in ["ref.csv", "cur.csv", "report.json"]]
+    pd.DataFrame({"id": ["a"] * 10, "x": range(10), "y": range(10)}).to_csv(ref, index=False)
+    pd.DataFrame({"y": range(10), "x": range(100, 110), "label": ["b"] * 10}).to_csv(
+        cur, index=False
+    )
+    assert (
+        main(
+            [
+                "compare",
+                str(ref),
+                str(cur),
+                "--column",
+                "y",
+                "--column",
+                "x",
+                "--output",
+                str(out),
+                "--fail-on-alert",
+            ]
+        )
+        == 2
+    )
+    report = json.loads(out.read_text())
+    assert report["dataset"]["features"] == 2
+    assert [f["name"] for f in report["scenarios"][0]["drift"]["features"]] == ["y", "x"]
+
+
+@pytest.mark.parametrize("columns", [["absent"], ["x", "x"], ["x", "y"]])
+def test_invalid_column_selection_preserves_previous_report(tmp_path, columns):
+    ref, cur, out = [tmp_path / p for p in ["ref.csv", "cur.csv", "report.json"]]
+    pd.DataFrame({"x": range(10), "y": range(10)}).to_csv(ref, index=False)
+    pd.DataFrame({"x": range(10)}).to_csv(cur, index=False)
+    out.write_text("previous report")
+    args = ["compare", str(ref), str(cur), "--output", str(out)]
+    for column in columns:
+        args.extend(["--column", column])
+    with pytest.raises(SystemExit) as error:
+        main(args)
+    assert error.value.code == 2
+    assert out.read_text() == "previous report"

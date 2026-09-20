@@ -76,6 +76,13 @@ def main(argv: list[str] | None = None) -> int:
     compare.add_argument("--alpha", type=float, default=0.05)
     compare.add_argument("--psi-threshold", type=float, default=0.2)
     compare.add_argument(
+        "--column",
+        action="append",
+        dest="columns",
+        metavar="NAME",
+        help="Monitor only this column; repeat for multiple columns (in the given order)",
+    )
+    compare.add_argument(
         "--fail-on-alert", action="store_true", help="Exit 2 when drift is flagged"
     )
     args = parser.parse_args(argv)
@@ -88,9 +95,18 @@ def main(argv: list[str] | None = None) -> int:
                     args.output.exists() and source.exists() and args.output.samefile(source)
                 ):
                     raise ValueError("Output must not overwrite an input CSV")
+            reference, current = read_csv(args.reference), read_csv(args.current)
+            if args.columns:
+                if len(set(args.columns)) != len(args.columns):
+                    raise ValueError("Each --column must be specified only once")
+                for path, frame in ((args.reference, reference), (args.current, current)):
+                    missing = [name for name in args.columns if name not in frame.columns]
+                    if missing:
+                        raise ValueError(f"Unknown columns in {path.name}: {', '.join(missing)}")
+                reference, current = reference[args.columns], current[args.columns]
             result = compare_frames(
-                read_csv(args.reference),
-                read_csv(args.current),
+                reference,
+                current,
                 alpha=args.alpha,
                 psi_threshold=args.psi_threshold,
             )
