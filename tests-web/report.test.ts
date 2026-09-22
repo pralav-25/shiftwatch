@@ -18,6 +18,38 @@ const raw = (): Report =>
 void test('accepts the report produced by the real Python pipeline', () => {
   assert.equal(parseReport(raw()).scenarios.length, 4);
 });
+
+type Threshold = 'alpha' | 'psi_threshold' | 'missing_threshold';
+const thresholds: Threshold[] = ['alpha', 'psi_threshold', 'missing_threshold'];
+
+for (const key of thresholds) {
+  const valid = [Number.MIN_VALUE, 1e-20, Number.EPSILON, 1 - Number.EPSILON / 2];
+  if (key !== 'alpha') valid.push(1);
+  if (key === 'psi_threshold') valid.push(Number.MAX_VALUE);
+  for (const value of valid) {
+    void test(`accepts Python's ${key} boundary ${value} after JSON round trip`, () => {
+      const report = raw();
+      for (const scenario of report.scenarios) scenario.drift.config[key] = value;
+      // Keep evidence and counts consistent with the changed configuration.
+      const exported = withPsiThreshold(report, key === 'psi_threshold' ? value : 0.2);
+      const parsed = parseReport(JSON.parse(JSON.stringify(exported)));
+      assert.ok(parsed.scenarios.every((s) => s.drift.config[key] === value));
+    });
+  }
+
+  void test(`rejects invalid ${key} values`, () => {
+    const invalid: unknown[] = [0, -0, -1, NaN, Infinity, -Infinity, null, undefined, '0.05'];
+    if (key === 'alpha') invalid.push(1);
+    if (key !== 'psi_threshold') invalid.push(1 + Number.EPSILON);
+    for (const value of invalid) {
+      const report = raw();
+      Reflect.set(report.scenarios[0].drift.config, key, value);
+      const candidate = withPsiThreshold(report, report.scenarios[0].drift.config.psi_threshold);
+      assert.throws(() => parseReport(candidate), /Invalid ShiftWatch/, `${key}: ${String(value)}`);
+    }
+  });
+}
+
 void test('rejects malformed nested report data before rendering', () => {
   for (const change of [
     (r: Report) => {
