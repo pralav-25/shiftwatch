@@ -77,6 +77,11 @@ shiftwatch compare reference.csv current.csv \
 ```
 
 Report output is written atomically: a failed write preserves the previous report.
+Use `--missing-threshold 0.1` to alert on a missing-rate change of at least ten
+percentage points, or `--bins 5` to choose the number of reference quantile bins
+for PSI. Defaults are `0.05` and `10`; accepted ranges are `(0, 1]` and integers
+from `2` to `50`. Both settings are saved in the report's `config`.
+
 The CLI refuses to overwrite either input CSV, including through a symlink or hard link.
 
 Load the resulting JSON into the dashboard. Comparisons without a trained model show drift diagnostics without fabricated model-performance metrics. The dashboard accepts up to 200 features, 20 scenarios, and 5 MB per report; the Python library can analyze wider tables.

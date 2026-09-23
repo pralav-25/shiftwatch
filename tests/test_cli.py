@@ -7,6 +7,40 @@ import pytest
 from shiftwatch.cli import main, read_csv
 
 
+def test_custom_cli_drift_settings_control_quality_alerts(tmp_path):
+    ref, cur, out = [tmp_path / p for p in ["ref.csv", "cur.csv", "report.json"]]
+    pd.DataFrame({"value": [1.0] * 20}).to_csv(ref, index=False)
+    pd.DataFrame({"value": [float("nan")] * 2 + [1.0] * 18}).to_csv(cur, index=False)
+    common = ["compare", str(ref), str(cur), "--output", str(out), "--fail-on-alert"]
+    assert main(common) == 2
+    assert main([*common, "--missing-threshold", "0.2", "--bins", "4"]) == 0
+    drift = json.loads(out.read_text())["scenarios"][0]["drift"]
+    assert drift["config"]["bins"] == 4
+    assert drift["config"]["missing_threshold"] == 0.2
+    assert not drift["features"][0]["quality_alert"]
+
+
+@pytest.mark.parametrize(
+    "option,value",
+    [
+        ("--bins", "1"),
+        ("--bins", "51"),
+        ("--bins", "2.5"),
+        ("--missing-threshold", "0"),
+        ("--missing-threshold", "1.1"),
+        ("--missing-threshold", "nan"),
+    ],
+)
+def test_invalid_cli_drift_settings_preserve_output(tmp_path, option, value):
+    source, output = tmp_path / "source.csv", tmp_path / "report.json"
+    pd.DataFrame({"value": range(10)}).to_csv(source, index=False)
+    output.write_text("previous report")
+    with pytest.raises(SystemExit) as exc:
+        main(["compare", str(source), str(source), "--output", str(output), option, value])
+    assert exc.value.code == 2
+    assert output.read_text() == "previous report"
+
+
 def test_compare_writes_portable_report_and_returns_ci_failure(tmp_path):
     ref, cur, out = [tmp_path / p for p in ["ref.csv", "current.csv", "nested/report.json"]]
     pd.DataFrame({"value": range(100)}).to_csv(ref, index=False)
