@@ -87,6 +87,11 @@ def main(argv: list[str] | None = None) -> int:
     compare.add_argument(
         "--fail-on-alert", action="store_true", help="Exit 2 when drift is flagged"
     )
+    compare.add_argument(
+        "--fail-on-insufficient-data",
+        action="store_true",
+        help="Exit 2 when any feature has fewer than five observed values in either CSV",
+    )
     args = parser.parse_args(argv)
     try:
         if args.command == "demo":
@@ -133,6 +138,12 @@ def main(argv: list[str] | None = None) -> int:
         parser.error(str(exc))
     print(f"Saved {args.output}")
     if args.command == "compare" and args.fail_on_alert and result["alert_count"]:
+        return 2
+    if (
+        args.command == "compare"
+        and args.fail_on_insufficient_data
+        and any(feature["insufficient_data"] for feature in result["features"])
+    ):
         return 2
     return 0
 

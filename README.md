@@ -105,6 +105,13 @@ the report contains an alert. With that flag, an alert returns **2** after the
 report has been written, so downstream tooling can still inspect the result.
 Without the flag, an alert does not make the command fail.
 
+Use `--fail-on-insufficient-data` when the comparison must have at least five
+observed values for every feature in both files. It also returns **2** after
+saving diagnostics if any feature is untestable, even when neither distribution
+nor missingness alerts fire. The two flags can be combined; neither is enabled
+by default. This checks per-feature observations, in addition to the minimum
+five rows required in each CSV.
+
 Argument and input-validation errors also use exit status **2**. Do not treat
 that status alone as proof of drift: check the command's error output and whether
 the current run successfully wrote a report. Use a separate output path for each

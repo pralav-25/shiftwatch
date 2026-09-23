@@ -7,6 +7,20 @@ import pytest
 from shiftwatch.cli import main, read_csv
 
 
+@pytest.mark.parametrize("observed,expected_status", [(0, 2), (4, 2), (5, 0)])
+def test_optional_insufficient_data_gate_saves_diagnostics(tmp_path, observed, expected_status):
+    source, output = tmp_path / "source.csv", tmp_path / "report.json"
+    pd.DataFrame({"value": [1.0] * observed + [float("nan")] * (10 - observed)}).to_csv(
+        source, index=False
+    )
+    common = ["compare", str(source), str(source), "--output", str(output), "--fail-on-alert"]
+    assert main(common) == 0
+    assert main([*common, "--fail-on-insufficient-data"]) == expected_status
+    drift = json.loads(output.read_text())["scenarios"][0]["drift"]
+    assert drift["alert_count"] == 0
+    assert drift["features"][0]["insufficient_data"] is (observed < 5)
+
+
 def test_custom_cli_drift_settings_control_quality_alerts(tmp_path):
     ref, cur, out = [tmp_path / p for p in ["ref.csv", "cur.csv", "report.json"]]
     pd.DataFrame({"value": [1.0] * 20}).to_csv(ref, index=False)
