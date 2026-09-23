@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import sys
 import tempfile
 import warnings
 from pathlib import Path
@@ -68,11 +69,21 @@ def main(argv: list[str] | None = None) -> int:
     commands = parser.add_subparsers(dest="command", required=True)
     demo = commands.add_parser("demo", help="Reproduce the Wine classification experiment")
     demo.add_argument("--seed", type=int, default=42)
-    demo.add_argument("--output", type=Path, default=Path("public/reports/demo.json"))
+    demo.add_argument(
+        "--output",
+        type=Path,
+        default=Path("public/reports/demo.json"),
+        help="Report path, or - for JSON on standard output",
+    )
     compare = commands.add_parser("compare", help="Compare two numerical feature CSV files")
     compare.add_argument("reference", type=Path)
     compare.add_argument("current", type=Path)
-    compare.add_argument("--output", type=Path, default=Path("report.json"))
+    compare.add_argument(
+        "--output",
+        type=Path,
+        default=Path("report.json"),
+        help="Report path, or - for JSON on standard output",
+    )
     compare.add_argument("--alpha", type=float, default=0.05)
     compare.add_argument("--psi-threshold", type=float, default=0.2)
     compare.add_argument(
@@ -93,13 +104,15 @@ def main(argv: list[str] | None = None) -> int:
         help="Exit 2 when any feature has fewer than five observed values in either CSV",
     )
     args = parser.parse_args(argv)
+    to_stdout = args.output == Path("-")
     try:
         if args.command == "demo":
             report = run_experiment(args.seed)
         else:
             for source in (args.reference, args.current):
-                if args.output.resolve() == source.resolve() or (
-                    args.output.exists() and source.exists() and args.output.samefile(source)
+                if not to_stdout and (
+                    args.output.resolve() == source.resolve()
+                    or (args.output.exists() and source.exists() and args.output.samefile(source))
                 ):
                     raise ValueError("Output must not overwrite an input CSV")
             result = compare_frames(
@@ -133,10 +146,14 @@ def main(argv: list[str] | None = None) -> int:
                     }
                 ],
             }
-        write_report(args.output, report)
+        if to_stdout:
+            sys.stdout.write(json.dumps(report, indent=2, allow_nan=False) + "\n")
+        else:
+            write_report(args.output, report)
     except (OSError, ValueError) as exc:
         parser.error(str(exc))
-    print(f"Saved {args.output}")
+    if not to_stdout:
+        print(f"Saved {args.output}")
     if args.command == "compare" and args.fail_on_alert and result["alert_count"]:
         return 2
     if (

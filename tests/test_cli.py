@@ -7,6 +7,30 @@ import pytest
 from shiftwatch.cli import main, read_csv
 
 
+@pytest.mark.parametrize("gate", [[], ["--fail-on-alert"]])
+def test_stdout_is_valid_json_and_never_creates_a_dash_file(tmp_path, monkeypatch, capsys, gate):
+    monkeypatch.chdir(tmp_path)
+    pd.DataFrame({"value": range(100)}).to_csv("ref.csv", index=False)
+    pd.DataFrame({"value": range(1000, 1100)}).to_csv("current.csv", index=False)
+    status = main(["compare", "ref.csv", "current.csv", "--output", "-", *gate])
+    captured = capsys.readouterr()
+    report = json.loads(captured.out)
+    assert report["scenarios"][0]["drift"]["alert_count"] == 1
+    assert status == (2 if gate else 0)
+    assert captured.err == ""
+    assert sorted(path.name for path in tmp_path.iterdir()) == ["current.csv", "ref.csv"]
+
+
+def test_stdout_validation_error_emits_no_partial_report(tmp_path, capsys):
+    source = tmp_path / "bad.csv"
+    source.write_text("x,x\n1,2\n")
+    with pytest.raises(SystemExit):
+        main(["compare", str(source), str(source), "--output", "-"])
+    captured = capsys.readouterr()
+    assert captured.out == ""
+    assert "Duplicate CSV headers" in captured.err
+
+
 @pytest.mark.parametrize("observed,expected_status", [(0, 2), (4, 2), (5, 0)])
 def test_optional_insufficient_data_gate_saves_diagnostics(tmp_path, observed, expected_status):
     source, output = tmp_path / "source.csv", tmp_path / "report.json"
