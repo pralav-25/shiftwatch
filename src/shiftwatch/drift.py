@@ -7,7 +7,7 @@ small samples make p-values approximate. Missingness is monitored separately.
 from __future__ import annotations
 
 from math import isclose
-from numbers import Integral
+from numbers import Integral, Real
 
 import numpy as np
 import pandas as pd
@@ -100,6 +100,18 @@ def _missingness_alert(delta: float, threshold: float) -> bool:
     return magnitude >= threshold or isclose(magnitude, threshold, rel_tol=1e-12, abs_tol=0)
 
 
+def _finite_real(value: Real, name: str) -> float:
+    if isinstance(value, (bool, np.bool_)) or not isinstance(value, Real):
+        raise ValueError(f"{name} must be a finite real number, not a boolean")
+    try:
+        result = float(value)
+    except (ValueError, OverflowError) as exc:
+        raise ValueError(f"{name} must be a finite real number") from exc
+    if not np.isfinite(result):
+        raise ValueError(f"{name} must be a finite real number")
+    return result
+
+
 def compare_frames(
     reference: pd.DataFrame,
     current: pd.DataFrame,
@@ -115,7 +127,10 @@ def compare_frames(
     Quality alert = absolute missing-rate change >= missing_threshold.
     Fewer than five observed values yields an explicit insufficient-data result.
     """
-    if not 0 < alpha < 1 or not np.isfinite(psi_threshold) or psi_threshold <= 0:
+    alpha = _finite_real(alpha, "alpha")
+    psi_threshold = _finite_real(psi_threshold, "PSI threshold")
+    missing_threshold = _finite_real(missing_threshold, "missing threshold")
+    if not 0 < alpha < 1 or psi_threshold <= 0:
         raise ValueError("alpha must be in (0, 1) and PSI threshold must be finite and positive")
     if (
         not 0 < missing_threshold <= 1
@@ -124,6 +139,7 @@ def compare_frames(
         or not 2 <= bins <= 50
     ):
         raise ValueError("missing threshold must be in (0, 1] and bins must be in [2, 50]")
+    bins = int(bins)
     _validate(reference, "Reference")
     _validate(current, "Current")
     if set(reference.columns) != set(current.columns):

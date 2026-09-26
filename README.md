@@ -109,6 +109,10 @@ result = compare_frames(
 print(result["alert_count"])
 ```
 
+Library thresholds must be finite real scalars; booleans, strings, arrays, and
+nonfinite values raise `ValueError`. NumPy scalar settings and integral bin counts
+are normalized to ordinary Python numbers so the returned report remains JSON-serializable.
+
 ### Exit status in automation
 
 A successful comparison returns **0** unless `--fail-on-alert` is enabled and
