@@ -95,6 +95,12 @@ def main(argv: list[str] | None = None) -> int:
         "--delimiter", default=",", help="One ASCII field separator for both files (default: comma)"
     )
     compare.add_argument(
+        "--columns",
+        nargs="+",
+        metavar="NAME",
+        help="Compare only these feature columns, in the given order; omit IDs and labels",
+    )
+    compare.add_argument(
         "--output",
         type=Path,
         default=Path("report.json"),
@@ -131,9 +137,22 @@ def main(argv: list[str] | None = None) -> int:
                     or (args.output.exists() and source.exists() and args.output.samefile(source))
                 ):
                     raise ValueError("Output must not overwrite an input CSV")
+            reference = read_csv(args.reference, delimiter=args.delimiter)
+            current = read_csv(args.current, delimiter=args.delimiter)
+            if args.columns is not None:
+                if len(set(args.columns)) != len(args.columns):
+                    raise ValueError("Selected columns must be unique")
+                for label, frame in (("Reference", reference), ("Current", current)):
+                    missing = [name for name in args.columns if name not in frame.columns]
+                    if missing:
+                        raise ValueError(
+                            f"{label} is missing selected columns: {', '.join(missing)}"
+                        )
+                reference = reference.loc[:, args.columns]
+                current = current.loc[:, args.columns]
             result = compare_frames(
-                read_csv(args.reference, delimiter=args.delimiter),
-                read_csv(args.current, delimiter=args.delimiter),
+                reference,
+                current,
                 alpha=args.alpha,
                 psi_threshold=args.psi_threshold,
                 missing_threshold=args.missing_threshold,

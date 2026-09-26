@@ -64,7 +64,7 @@ GitHub Actions executes the notebook to catch stale imports and analysis errors.
 
 ### Compare your own data
 
-Use two CSVs containing the same named numerical feature columns. Column order can differ. Remove identifiers and target labels. Each file needs at least five rows; missing numeric values are allowed, infinity and nonnumeric columns are rejected.
+Use two CSVs containing the same named numerical feature columns. Column order can differ. Remove identifiers and target labels, or select the feature columns explicitly. Each file needs at least five rows; missing numeric values are allowed, infinity and nonnumeric columns are rejected.
 
 Give every column a unique, nonempty header. Empty header cells are rejected before
 the CSV parser can replace them with invented `Unnamed: ...` feature names.
@@ -78,6 +78,12 @@ shiftwatch compare examples/reference.csv examples/shifted.csv --output report.j
 shiftwatch compare reference.csv current.csv \
   --psi-threshold 0.2 --alpha 0.05 --fail-on-alert --output report.json
 ```
+
+Use `--columns temperature pressure` to select features without editing the source
+files. Names must be unique and present in both inputs; the report uses the given
+order. Unselected identifier, label, and metadata columns are ignored, while CSV
+header and row-width checks still apply to the whole file. Without this option,
+all columns are compared and both inputs must have the same feature names.
 
 Use `--delimiter ';'` to compare semicolon-separated exports. Both files use the
 same separator; a literal tab or pipe also works. The separator must be one ASCII
