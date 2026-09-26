@@ -20,6 +20,8 @@ def read_csv(path: Path) -> pd.DataFrame:
     # Read the header as literal data before pandas can rename duplicates.
     # Using the same parser honors blank lines, quoting, and UTF-8 BOMs.
     headers = pd.read_csv(path, header=None, nrows=1, dtype=str, na_filter=False).iloc[0].tolist()
+    if any(name == "" for name in headers):
+        raise ValueError(f"CSV headers must not be empty in {path.name}")
     if len(set(headers)) != len(headers):
         raise ValueError(f"Duplicate CSV headers in {path.name}")
     # A wider data row otherwise makes pandas infer an index, silently moving
