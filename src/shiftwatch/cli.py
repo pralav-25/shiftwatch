@@ -16,10 +16,21 @@ from .drift import compare_frames
 from .experiment import run_experiment
 
 
-def read_csv(path: Path) -> pd.DataFrame:
+def read_csv(path: Path, *, delimiter: str = ",") -> pd.DataFrame:
+    if (
+        not isinstance(delimiter, str)
+        or len(delimiter) != 1
+        or not delimiter.isascii()
+        or delimiter in '\r\n\x00"'
+    ):
+        raise ValueError("delimiter must be one ASCII character other than newline, NUL, or quote")
     # Read the header as literal data before pandas can rename duplicates.
     # Using the same parser honors blank lines, quoting, and UTF-8 BOMs.
-    headers = pd.read_csv(path, header=None, nrows=1, dtype=str, na_filter=False).iloc[0].tolist()
+    headers = (
+        pd.read_csv(path, sep=delimiter, header=None, nrows=1, dtype=str, na_filter=False)
+        .iloc[0]
+        .tolist()
+    )
     if any(name == "" for name in headers):
         raise ValueError(f"CSV headers must not be empty in {path.name}")
     if len(set(headers)) != len(headers):
@@ -30,7 +41,7 @@ def read_csv(path: Path) -> pd.DataFrame:
     try:
         with warnings.catch_warnings():
             warnings.simplefilter("error", pd.errors.ParserWarning)
-            return pd.read_csv(path, index_col=False)
+            return pd.read_csv(path, sep=delimiter, index_col=False)
     except pd.errors.ParserWarning as exc:
         raise ValueError(
             f"Invalid CSV in {path.name}: data rows have more fields than the header. "
@@ -81,6 +92,9 @@ def main(argv: list[str] | None = None) -> int:
     compare.add_argument("reference", type=Path)
     compare.add_argument("current", type=Path)
     compare.add_argument(
+        "--delimiter", default=",", help="One ASCII field separator for both files (default: comma)"
+    )
+    compare.add_argument(
         "--output",
         type=Path,
         default=Path("report.json"),
@@ -118,8 +132,8 @@ def main(argv: list[str] | None = None) -> int:
                 ):
                     raise ValueError("Output must not overwrite an input CSV")
             result = compare_frames(
-                read_csv(args.reference),
-                read_csv(args.current),
+                read_csv(args.reference, delimiter=args.delimiter),
+                read_csv(args.current, delimiter=args.delimiter),
                 alpha=args.alpha,
                 psi_threshold=args.psi_threshold,
                 missing_threshold=args.missing_threshold,
