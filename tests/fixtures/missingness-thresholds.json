@@ -54,6 +54,15 @@
     "alert": false
   },
   {
+    "name": "unchanged with threshold below machine epsilon",
+    "reference_rows": 20,
+    "reference_missing": 5,
+    "current_rows": 20,
+    "current_missing": 5,
+    "threshold": 1e-20,
+    "alert": false
+  },
+  {
     "name": "unequal row counts increase",
     "reference_rows": 20,
     "reference_missing": 5,

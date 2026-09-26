@@ -213,9 +213,12 @@ export function parseReport(input: unknown): Report {
     count(d.feature_count);
     count(d.alert_count);
     const c = obj(d.config);
-    number(c.alpha, Number.EPSILON, 1 - Number.EPSILON);
-    number(c.psi_threshold, Number.EPSILON);
-    number(c.missing_threshold, Number.EPSILON, 1);
+    number(c.alpha, 0, 1);
+    number(c.psi_threshold, 0);
+    number(c.missing_threshold, 0, 1);
+    // Match compare_frames: epsilon is a spacing at 1, not a minimum positive value.
+    if (c.alpha === 0 || c.alpha === 1 || c.psi_threshold === 0 || c.missing_threshold === 0)
+      fail();
     number(c.bins, 2, 50);
     count(c.bins);
     const fs = array(d.features, 1, 200),
