@@ -16,7 +16,9 @@ from .drift import compare_frames
 from .experiment import run_experiment
 
 
-def read_csv(path: Path, *, delimiter: str = ",") -> pd.DataFrame:
+def read_csv(
+    path: Path, *, delimiter: str = ",", missing_values: list[str] | None = None
+) -> pd.DataFrame:
     if (
         not isinstance(delimiter, str)
         or len(delimiter) != 1
@@ -41,7 +43,7 @@ def read_csv(path: Path, *, delimiter: str = ",") -> pd.DataFrame:
     try:
         with warnings.catch_warnings():
             warnings.simplefilter("error", pd.errors.ParserWarning)
-            return pd.read_csv(path, sep=delimiter, index_col=False)
+            return pd.read_csv(path, sep=delimiter, index_col=False, na_values=missing_values)
     except pd.errors.ParserWarning as exc:
         raise ValueError(
             f"Invalid CSV in {path.name}: data rows have more fields than the header. "
@@ -101,6 +103,12 @@ def main(argv: list[str] | None = None) -> int:
         help="Compare only these feature columns, in the given order; omit IDs and labels",
     )
     compare.add_argument(
+        "--missing-value",
+        action="append",
+        metavar="TOKEN",
+        help="Additional missing-value marker for both files; repeat for multiple markers",
+    )
+    compare.add_argument(
         "--output",
         type=Path,
         default=Path("report.json"),
@@ -137,8 +145,12 @@ def main(argv: list[str] | None = None) -> int:
                     or (args.output.exists() and source.exists() and args.output.samefile(source))
                 ):
                     raise ValueError("Output must not overwrite an input CSV")
-            reference = read_csv(args.reference, delimiter=args.delimiter)
-            current = read_csv(args.current, delimiter=args.delimiter)
+            reference = read_csv(
+                args.reference, delimiter=args.delimiter, missing_values=args.missing_value
+            )
+            current = read_csv(
+                args.current, delimiter=args.delimiter, missing_values=args.missing_value
+            )
             if args.columns is not None:
                 if len(set(args.columns)) != len(args.columns):
                     raise ValueError("Selected columns must be unique")

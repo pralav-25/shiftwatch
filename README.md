@@ -90,6 +90,13 @@ same separator; a literal tab or pipe also works. The separator must be one ASCI
 character other than a newline, NUL, or double quote. Quoted field names and all
 header/row-width checks use that separator. Comma remains the default.
 
+Use `--missing-value=-999 --missing-value MISSING` for dataset-specific missing
+markers. Repeat the option for each marker; they apply to data cells in both
+files, while literal header names are preserved. Pandas' default blank/NA markers
+remain enabled. Numeric sentinels remain observed numbers unless explicitly
+declared. The resulting missing counts feed both missingness alerts and
+`--fail-on-insufficient-data`. The input files are not modified.
+
 Use `--missing-threshold 0.1` to alert on a missing-rate change of at least ten
 percentage points, or `--bins 5` to choose the number of reference quantile bins
 for PSI. Defaults are `0.05` and `10`; accepted ranges are `(0, 1]` and integers
