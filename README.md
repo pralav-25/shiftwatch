@@ -21,6 +21,7 @@ The bundled experiment uses **UCI Wine**. Shifted scenarios are explicitly synth
 - **Detects numerical data drift:** computes Population Stability Index, two-sample KS tests, Benjamini–Hochberg adjusted p-values, Wasserstein distance, and missingness changes.
 - **Works with your data:** compares two numerical CSVs and exports a validated JSON report. An optional nonzero exit code supports CI data gates.
 - **Explains the result:** the dashboard offers scenario switching, feature search, distribution inspection, exploratory thresholds, model comparisons, report import, and export.
+- **Compares scenarios:** select **Compare scenarios**, choose a baseline, and inspect performance deltas, new/cleared alerts, PSI changes, and missingness changes. Search features or show only changed alerts. Comparisons use the current PSI slider and each scenario's saved significance/missingness rules; absent measurements remain unavailable. Reports need at least two scenarios for this view.
 - **Reproduces the evidence:** committed results, dataset fingerprints, split indices, fixed seeds, dependency locks, and automated tests make the experiment inspectable.
 
 The dashboard reads files locally. It does not send uploaded reports to a server, run Python in the browser, or pretend to be a live production monitor.
