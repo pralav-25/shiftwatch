@@ -107,3 +107,28 @@ void test('export recomputes distribution flags and counts when PSI changes', ()
     assert.ok(scenario.drift.features.every((f) => !f.distribution_alert));
   }
 });
+
+void test('accepts the full finite threshold ranges supported by Python', () => {
+  for (const alpha of [Number.MIN_VALUE, 1e-20, 0.05, 0.9999999999999999]) {
+    const report = raw();
+    for (const scenario of report.scenarios) scenario.drift.config.alpha = alpha;
+    for (const threshold of [Number.MIN_VALUE, 1e-20, 0.2]) {
+      const exported = withPsiThreshold(report, threshold);
+      assert.equal(parseReport(exported), exported);
+    }
+  }
+});
+
+void test('rejects invalid threshold endpoints and nonfinite values', () => {
+  for (const [name, values] of [
+    ['alpha', [0, 1, -0.1, NaN, Infinity]],
+    ['psi_threshold', [0, -0.1, NaN, Infinity]],
+    ['missing_threshold', [0, -0.1, 1.1, NaN, Infinity]],
+  ] as const) {
+    for (const value of values) {
+      const report = raw();
+      report.scenarios[0].drift.config[name] = value;
+      assert.throws(() => parseReport(report), /Invalid ShiftWatch/);
+    }
+  }
+});

@@ -80,6 +80,14 @@ function missingnessAlert(delta: number, threshold: number): boolean {
   return magnitude >= threshold ||
     Math.abs(magnitude - threshold) <= 1e-12 * Math.max(magnitude, threshold);
 }
+function distributionAlert(
+  f: Pick<Feature, 'psi' | 'q_value'>,
+  threshold: number,
+  alpha: number,
+): boolean {
+  return f.psi !== null && f.q_value !== null &&
+    f.psi >= threshold && f.q_value <= alpha;
+}
 export function isAlert(
   f: Feature,
   threshold: number,
@@ -87,10 +95,7 @@ export function isAlert(
   missingThreshold: number,
 ): boolean {
   return (
-    (f.psi !== null &&
-      f.q_value !== null &&
-      f.psi >= threshold &&
-      f.q_value <= alpha) ||
+    distributionAlert(f, threshold, alpha) ||
     missingnessAlert(f.missing_delta, missingThreshold)
   );
 }
@@ -98,13 +103,16 @@ export function withPsiThreshold(report: Report, threshold: number): Report {
   return {
     ...report,
     scenarios: report.scenarios.map((s) => {
-      const features = s.drift.features.map((f) => ({
-        ...f,
-        distribution_alert: f.psi !== null && f.q_value !== null &&
-          f.psi >= threshold && f.q_value <= s.drift.config.alpha,
-        quality_alert: missingnessAlert(f.missing_delta, s.drift.config.missing_threshold),
-        alert: isAlert(f, threshold, s.drift.config.alpha, s.drift.config.missing_threshold),
-      }));
+      const features = s.drift.features.map((f) => {
+        const distribution = distributionAlert(f, threshold, s.drift.config.alpha);
+        const quality = missingnessAlert(f.missing_delta, s.drift.config.missing_threshold);
+        return {
+          ...f,
+          distribution_alert: distribution,
+          quality_alert: quality,
+          alert: distribution || quality,
+        };
+      });
       return {
         ...s,
         drift: {
@@ -166,6 +174,10 @@ export function parseReport(input: unknown): Report {
     number(x, 0, 1e9);
     if (!Number.isInteger(x)) fail();
   }
+  function positive(x: unknown, hi = Infinity): asserts x is number {
+    number(x, 0, hi);
+    if (x === 0) fail();
+  }
   function boolean(x: unknown) {
     if (typeof x !== 'boolean') fail();
   }
@@ -213,9 +225,12 @@ export function parseReport(input: unknown): Report {
     count(d.feature_count);
     count(d.alert_count);
     const c = obj(d.config);
-    number(c.alpha, Number.EPSILON, 1 - Number.EPSILON);
-    number(c.psi_threshold, Number.EPSILON);
-    number(c.missing_threshold, Number.EPSILON, 1);
+    // Match Python's open bounds. EPSILON is spacing near 1, not the
+    // smallest positive float; using it rejects valid exported reports.
+    positive(c.alpha, 1);
+    if (c.alpha === 1) fail();
+    positive(c.psi_threshold);
+    positive(c.missing_threshold, 1);
     number(c.bins, 2, 50);
     count(c.bins);
     const fs = array(d.features, 1, 200),
@@ -257,9 +272,11 @@ export function parseReport(input: unknown): Report {
       ])
         boolean(f[k]);
       const quality = missingnessAlert(f.missing_delta as number, c.missing_threshold as number);
-      const distribution = f.psi !== null && f.q_value !== null &&
-        (f.psi as number) >= (c.psi_threshold as number) &&
-        (f.q_value as number) <= (c.alpha as number);
+      const distribution = distributionAlert(
+        { psi: f.psi as number | null, q_value: f.q_value as number | null },
+        c.psi_threshold,
+        c.alpha,
+      );
       if (f.quality_alert !== quality || f.distribution_alert !== distribution ||
           f.alert !== (quality || distribution)) fail();
       if (f.insufficient_data !== (Math.min(f.reference_observed as number, f.current_observed as number) < 5)) fail();

@@ -49,3 +49,19 @@ def test_numpy_and_rational_settings_produce_portable_json():
         "bins": 5,
     }
     assert type(report["config"]["bins"]) is int
+
+
+@pytest.mark.parametrize("alpha", [5e-324, 1e-20, 0.05, 0.9999999999999999])
+@pytest.mark.parametrize("threshold", [5e-324, 1e-20, 0.2])
+def test_finite_threshold_boundaries_match_dashboard_contract(alpha, threshold):
+    frame = pd.DataFrame({"value": range(10)})
+    report = compare_frames(
+        frame, frame, alpha=alpha, psi_threshold=threshold, missing_threshold=threshold
+    )
+    assert report["alert_count"] == 0
+    assert json.loads(json.dumps(report, allow_nan=False))["config"] == {
+        "alpha": alpha,
+        "psi_threshold": threshold,
+        "missing_threshold": threshold,
+        "bins": 10,
+    }
