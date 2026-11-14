@@ -89,7 +89,9 @@ def _validate(frame: pd.DataFrame, label: str) -> None:
         for t in frame.dtypes
     ):
         raise ValueError(f"{label} must contain only real numeric features; remove IDs and labels")
-    if np.isinf(frame.to_numpy(dtype=float)).any():
+    # Nullable pandas numeric dtypes use pd.NA, which needs an explicit
+    # conversion marker even though missing observations are supported below.
+    if np.isinf(frame.to_numpy(dtype=float, na_value=np.nan)).any():
         raise ValueError(f"{label} contains infinity; use missing values or correct the input")
 
 
